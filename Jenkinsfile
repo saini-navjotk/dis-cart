@@ -7,8 +7,8 @@ pipeline {
     }
    
 	 environment{
-        DOCKER_USERNAME = credentials('DOCKER_USERNAME')
-        DOCKER_PASSWORD = credentials('DOCKER_PASSWORD')
+        DOCKER_USERNAME = credentials('NAVJOT_DOCKER_USERNAME')
+        DOCKER_PASSWORD = credentials('NAVJOT_DOCKER_PASSWORD')
     }
 	
     stages {
@@ -18,7 +18,7 @@ pipeline {
            stage('Checkout the code') {
             steps{
                 sh(script: """
-                    git clone https://github.com/manishsrivastava78/dis-cart.git
+                    git clone https://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@github.com/saini-navjotk/dis-cart.git
                 """, returnStdout: true) 
             }
         }
@@ -45,7 +45,7 @@ pipeline {
                 sh script: '''
                 #!/bin/bash
                 cd $WORKSPACE/dis-cart/
-                docker build -t manishsrivastavaggn/dis-cart:${BUILD_NUMBER} .
+                docker build -t navjotdis/dis-cart:${BUILD_NUMBER} .
                 '''
             }
         }
@@ -61,7 +61,7 @@ pipeline {
              stage('Push docker image') {
             steps{
                 sh(script: """
-                    docker push manishsrivastavaggn/dis-cart:${BUILD_NUMBER}
+                    docker push navjotdis/dis-cart:${BUILD_NUMBER}
                 """)
             }
         }
