@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dis-cart
-  namespace: cart-domain
+  namespace: orders-domain
   labels:
     app: dis-cart
 spec:
@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: dis-cart
-        image: manishsrivastavaggn/dis-cart:changeMePlease
+        image: navjotdis/dis-cart:changeMePlease
         ports:
         - containerPort: 8080
    
