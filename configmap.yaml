@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: microservices-config
-  namespace: user-domain
+  namespace: orders-domain
 data:
   config.json: |
     {
