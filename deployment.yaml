@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dis-cart
+  namespace: cart-domain
+  labels:
+    app: dis-cart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dis-cart
+  template:
+    metadata:
+      labels:
+        app: dis-cart
+    spec:
+      containers:
+      - name: dis-cart
+        image: manishsrivastavaggn/dis-cart:changeMePlease
+        ports:
+        - containerPort: 8080
+   
