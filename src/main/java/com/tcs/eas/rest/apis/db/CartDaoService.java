@@ -9,20 +9,22 @@ import com.tcs.eas.rest.apis.model.CartCheckoutResponse;
 import com.tcs.eas.rest.apis.model.CartProduct;
 import com.tcs.eas.rest.apis.model.CartProductRequest;
 import com.tcs.eas.rest.apis.model.CartProductResponse;
+import com.tcs.eas.rest.apis.model.CartProductUpdateResponse;
 import com.tcs.eas.rest.apis.model.CartRequest;
 import com.tcs.eas.rest.apis.model.CartResponse;
 import com.tcs.eas.rest.apis.model.CartUpdateRequest;
+import com.tcs.eas.rest.apis.model.CartUpdateResponse;
 import com.tcs.eas.rest.apis.model.DeliveryInfo;
 import com.tcs.eas.rest.apis.model.DeliveryType;
 import com.tcs.eas.rest.apis.model.PaymentInfo;
 import com.tcs.eas.rest.apis.model.PaymentType;
 import com.tcs.eas.rest.apis.model.Product;
+import com.tcs.eas.rest.apis.model.ProductResponse;
 import com.tcs.eas.rest.apis.model.ShipmentProduct;
 import com.tcs.eas.rest.apis.model.User;
 import com.tcs.eas.rest.apis.model.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.client.RestTemplate;
@@ -99,7 +101,6 @@ public class CartDaoService {
             cartProductList.add(cartProduct);
         }
 
-
         cart.setCartProducts(cartProductList);
         Cart cartSaved = cartRepository.save(cart);
 
@@ -109,11 +110,22 @@ public class CartDaoService {
                 cartResponse.setCartId(cartTemp.getCartId());
                 cartResponse.setUserId(cartTemp.getUserId());
                 cartResponse.setDate(cartTemp.getCartDate());
+                cartResponse.setCartQuantity(cart.getCartProducts().size());
 
-                List<CartProductResponse> cartProductResponses = cart.getCartProducts().stream().map(cartProduct -> {
-                    return getProductInfoById(cartProduct.getProductId());
-                }).collect(Collectors.toList());
+                List<CartProductResponse> cartProductResponses = new ArrayList<>();
+                for (CartProduct cp : cart.getCartProducts()) {
+                    ProductResponse productResponse = getProductInfoById(cp.getProductId());
 
+                    cartProductResponses.add(
+                            new CartProductResponse(
+                                    productResponse.getProductId(),
+                                    productResponse.getProductName(),
+                                    cp.getCartQuantity(),
+                                    productResponse.getAvailableQuantity(),
+                                    productResponse.getPrice(),
+                                    cp.getOfferId()
+                            ));
+                }
                 cartResponse.setCartProductResponses(cartProductResponses);
 
                 return cartResponse;
@@ -139,12 +151,20 @@ public class CartDaoService {
                     cartResponse.setCartId(cartTemp.getCartId());
                     cartResponse.setUserId(cartTemp.getUserId());
                     cartResponse.setDate(cartTemp.getCartDate());
+                    cartResponse.setCartQuantity(cartTemp.getCartProducts().size());
 
-                    List<CartProductResponse> cartProductResponses = cartTemp.getCartProducts().stream().map(cartProduct -> {
-                        return getProductInfoById(cartProduct.getProductId());
-
-                    }).collect(Collectors.toList());
-
+                    List<CartProductResponse> cartProductResponses = new ArrayList<>();
+                    for (CartProduct cp : cartTemp.getCartProducts()) {
+                        ProductResponse productResponse = getProductInfoById(cp.getProductId());
+                        cartProductResponses.add(
+                                new CartProductResponse(
+                                        productResponse.getProductId(),
+                                        productResponse.getProductName(),
+                                        cp.getCartQuantity(),
+                                        productResponse.getAvailableQuantity(),
+                                        productResponse.getPrice()
+                                ));
+                    }
                     cartResponse.setCartProductResponses(cartProductResponses);
 
                     return cartResponse;
@@ -156,12 +176,57 @@ public class CartDaoService {
         return cartResponse;
     }
 
+
+    /**
+     * Get cart by user ID
+     *
+     * @param userId unique ID of user
+     * @return cart reponse
+     */
+    public CartResponse getCartByUserID(int userId) {
+
+        Cart userCart = cartRepository.findCartsByUserId(userId);
+
+        CartResponse cartResponse = new CartResponse();
+        if (userCart != null) {
+            if (!ObjectUtils.isEmpty(userCart)) {
+                Stream.of(userCart).map(cartTemp -> {
+                    cartResponse.setCartId(cartTemp.getCartId());
+                    cartResponse.setUserId(cartTemp.getUserId());
+                    cartResponse.setDate(cartTemp.getCartDate());
+                    cartResponse.setCartQuantity(cartTemp.getCartProducts().size());
+
+                    List<CartProductResponse> cartProductResponses = new ArrayList<>();
+                    for (CartProduct cp : cartTemp.getCartProducts()) {
+                        ProductResponse productResponse = getProductInfoById(cp.getProductId());
+                        cartProductResponses.add(
+                                new CartProductResponse(
+                                        productResponse.getProductId(),
+                                        productResponse.getProductName(),
+                                        cp.getCartQuantity(),
+                                        productResponse.getAvailableQuantity(),
+                                        productResponse.getPrice(),
+                                        cp.getOfferId()
+                                ));
+                    }
+                    cartResponse.setCartProductResponses(cartProductResponses);
+
+                    return cartResponse;
+                }).collect(Collectors.toList()).get(0);
+            }
+        } else {
+            throw new CartNotFoundException("No Cart found for User " + userId + " !");
+        }
+        return cartResponse;
+
+    }
+
     /**
      * Update Cart by ID
      *
      * @param cartUpdateRequest request body for update
      */
-    public void updateCartById(CartUpdateRequest cartUpdateRequest) {
+    public CartUpdateResponse updateCartById(CartUpdateRequest cartUpdateRequest) {
         if (cartUpdateRequest.getCartProducts().size() == 0) {
             cartRepository.deleteById(cartUpdateRequest.getCartId());
         } else {
@@ -185,7 +250,7 @@ public class CartDaoService {
                                 cartProductsToUpdateList.add(cartProductDB);
 
                             } else {
-                                /*cartProductRepository.deleteById(cartProductDB.getCartProductId());*/
+                                cartProductRepository.deleteById(cartProductDB.getCartProductId());
                                 cartProductDB.setCartQuantity(cartProductRequest.getCartQuantity());
                                 cartProductDB.setOfferId(cartProductRequest.getOfferId());
                                 cartProductsToUpdateList.add(cartProductDB);
@@ -194,7 +259,7 @@ public class CartDaoService {
                             break;
                         }
                     }
-                    if (!isFoundInDB && cartProductRequest.getCartQuantity() != 0) {
+                    if (!isFoundInDB && cartProductRequest.getCartQuantity() > 0) {
                         CartProduct cartProduct = new CartProduct();
                         cartProduct.setCartQuantity(cartProductRequest.getCartQuantity());
                         cartProduct.setProductId(cartProductRequest.getProductId());
@@ -209,7 +274,34 @@ public class CartDaoService {
 
                     cartInfoFromDB.get().setCartDate(cartUpdateRequest.getDate());
                     cartInfoFromDB.get().setCartProducts(cartProductsToUpdateList);
-                    cartRepository.save(cartInfoFromDB.get());
+                    Cart cartResult = cartRepository.save(cartInfoFromDB.get());
+
+                    CartUpdateResponse cartUpdateResponse = new CartUpdateResponse();
+                    cartUpdateResponse.setCartId(cartResult.getCartId());
+                    cartUpdateResponse.setUserId(cartResult.getUserId());
+                    cartUpdateResponse.setDate(cartResult.getCartDate());
+                    cartUpdateResponse.setCartQuantity(cartProductsListFromDB.size());
+
+                    List<CartProductUpdateResponse> cartProductUpdateResponseList = new ArrayList<>();
+
+                    for (CartProduct cartProduct : cartProductsToUpdateList) {
+                        CartProductUpdateResponse cartProductUpdateResponse = new CartProductUpdateResponse();
+                        cartProductUpdateResponse.setProductId(cartProduct.getProductId());
+                        cartProductUpdateResponse.setOfferId(cartProduct.getOfferId());
+                        cartProductUpdateResponse.setProductQuantity(cartProduct.getCartQuantity());
+
+                        ProductResponse productResponse = getProductInfoById(cartProduct.getProductId());
+                        if (!ObjectUtils.isEmpty(productResponse)) {
+                            cartProductUpdateResponse.setProductPrice(productResponse.getPrice());
+                            cartProductUpdateResponse.setProductName(productResponse.getProductName());
+                            cartProductUpdateResponse.setAvailableQuantity(productResponse.getAvailableQuantity());
+                        }
+
+                        cartProductUpdateResponseList.add(cartProductUpdateResponse);
+                    }
+                    cartUpdateResponse.setCartProductUpdateResponseList(cartProductUpdateResponseList);
+
+                    return cartUpdateResponse;
                 }
 
                /* List<CartProduct> cartProductsToDeleteList = cartInfoFromDB.get().getCartProducts().stream().filter(n -> n.getCartQuantity() == 0).collect(Collectors.toList());
@@ -220,13 +312,14 @@ public class CartDaoService {
                     }
                     cartInfoFromDB.get().setCartProducts(cartProductsToUpdateList);
                     cartRepository.save(cartInfoFromDB.get());
-                    *//*cartProductRepository.deleteAll(cartProductsToDeleteList);*//*
+                    *//**//*cartProductRepository.deleteAll(cartProductsToDeleteList);*//**//*
                 }*/
 
             } else {
                 throw new CartNotFoundException("Cart Not Found !");
             }
         }
+        return null;
     }
 
     /**
@@ -235,17 +328,17 @@ public class CartDaoService {
      * @param productId unique ID of product
      * @return cartProductResponse cart product response for UI
      */
-    private CartProductResponse getProductInfoById(int productId) {
+    private ProductResponse getProductInfoById(int productId) {
 
         RestTemplate restTemplate = new RestTemplate();
 
         try {
-            ResponseEntity<CartProductResponse> response
-                    = restTemplate.getForEntity(productApiBaseUrl + "/" + productId, CartProductResponse.class);
-            return response.getBody();
+            ProductResponse response
+                    = restTemplate.getForObject(productApiBaseUrl + "/" + productId, ProductResponse.class);
+            return response != null ? response : new ProductResponse();
         } catch (Exception e) {
             loggingService.logError(e.getMessage());
-            return new CartProductResponse(productId, "NOT FOUND", 0, 0, 0);
+            return new ProductResponse();
         }
     }
 

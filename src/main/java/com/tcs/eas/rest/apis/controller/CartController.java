@@ -10,6 +10,7 @@ import com.tcs.eas.rest.apis.model.CartCheckoutResponse;
 import com.tcs.eas.rest.apis.model.CartRequest;
 import com.tcs.eas.rest.apis.model.CartResponse;
 import com.tcs.eas.rest.apis.model.CartUpdateRequest;
+import com.tcs.eas.rest.apis.model.CartUpdateResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,25 +41,29 @@ public class CartController {
     public ResponseEntity<CartResponse> createCart(@Valid @RequestBody CartRequest cartRequest, @RequestHeader Map<String, String> headers) {
 
         loggingService.writeProcessLog("POST", "cart", "createCart", cartRequest);
+        CartResponse cartResponse = cartDaoService.createCart(cartRequest);
+        Utility.sendToKafka(cartResponse);
 
-        return ResponseEntity.status(HttpStatus.CREATED).headers(Utility.getCustomResponseHeaders(headers)).body(cartDaoService.createCart(cartRequest));
+        return ResponseEntity.status(HttpStatus.CREATED).headers(Utility.getCustomResponseHeaders(headers)).body(cartResponse);
     }
 
-    @GetMapping(value = "/{id}")
-    public ResponseEntity<CartResponse> getCartById(@PathVariable int id, @RequestHeader Map<String, String> headers) {
+    @GetMapping(value = "/{userId}")
+    public ResponseEntity<CartResponse> getCartByUserId(@PathVariable int userId, @RequestHeader Map<String, String> headers) {
 
-        CartResponse cartResponse = cartDaoService.getCartById(id);
+        CartResponse cartResponse = cartDaoService.getCartByUserID(userId);
 
         loggingService.writeProcessLog("GET", "cart", "getCart", cartResponse);
+       // Utility.sendToKafka(cartResponse);
         return ResponseEntity.status(HttpStatus.OK).headers(Utility.getCustomResponseHeaders(headers)).body(cartResponse);
     }
 
     @PutMapping
-    public ResponseEntity<CartResponse> updateCartById(@Valid @RequestBody CartUpdateRequest cartUpdateRequest, @RequestHeader Map<String, String> headers) {
+    public ResponseEntity<CartUpdateResponse> updateCartById(@Valid @RequestBody CartUpdateRequest cartUpdateRequest, @RequestHeader Map<String, String> headers) {
 
-        cartDaoService.updateCartById(cartUpdateRequest);
         loggingService.writeProcessLog("PUT", "cart", "updateCartById", cartUpdateRequest);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).headers(Utility.getCustomResponseHeaders(headers)).body(null);
+        CartUpdateResponse cartResponse = cartDaoService.updateCartById(cartUpdateRequest);
+        Utility.sendToKafka(cartResponse);
+        return ResponseEntity.status(HttpStatus.OK).headers(Utility.getCustomResponseHeaders(headers)).body(cartResponse);
     }
 
     @DeleteMapping(value = "/{id}")

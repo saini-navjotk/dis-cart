@@ -11,6 +11,7 @@ public class CartResponse {
     private int cartId;
     private int userId;
     private String date;
+    private int cartQuantity;
     private List<CartProductResponse> cartProductResponses;
 
     public int getCartId() {
@@ -43,6 +44,15 @@ public class CartResponse {
 
 	public void setDate(String date) {
 		this.date = date;
+	}
+
+	public void setCartQuantity(int size) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public int getCartQuantity() {
+		return cartQuantity;
 	}
     
     

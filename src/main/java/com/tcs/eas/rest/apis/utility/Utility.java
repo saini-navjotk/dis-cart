@@ -9,8 +9,13 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tcs.dis.DisEntity;
+import com.tcs.dis.KafkaPublish;
 import com.tcs.eas.rest.apis.Constants;
+import com.tcs.eas.rest.apis.model.CartResponse;
+import com.tcs.eas.rest.apis.model.CartUpdateResponse;
 
 /**
  * 
@@ -78,6 +83,20 @@ public class Utility  implements Constants{
 		}
 
 		return responseHeaders;
+	}
+	
+	public static void sendToKafka(CartResponse cartResponse) {
+		KafkaPublish publish = new KafkaPublish();
+		ObjectMapper mapper = new ObjectMapper();
+		publish.send(DisEntity.CART, mapper.convertValue(cartResponse, JsonNode.class));
+	}
+
+
+	public static void sendToKafka(CartUpdateResponse cartResponse) {
+		KafkaPublish publish = new KafkaPublish();
+		ObjectMapper mapper = new ObjectMapper();
+		publish.send(DisEntity.CART, mapper.convertValue(cartResponse, JsonNode.class));
+		
 	}
 	
 }

@@ -1,16 +1,20 @@
 package com.tcs.eas.rest.apis.model;
 
 import io.swagger.annotations.ApiModel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @ApiModel
+@Data
+@AllArgsConstructor
 public class CartProductResponse {
 
     private Integer productId;
     private String productName;
-    //    private String productImage;
     private int productQuantity;
     private int availableQuantity;
     private double productPrice;
+    private int offerId;
 
     public CartProductResponse() {
     }
@@ -23,7 +27,18 @@ public class CartProductResponse {
         this.productPrice = productPrice;
     }
 
-    public Integer getProductId() {
+    public CartProductResponse(int productId2, String productName2, int cartQuantity, int availableQuantity2,
+			Double price, int offerId2) {
+    	productId = productId2;
+    	productName = productName2;
+    	this.productQuantity = cartQuantity;
+    	availableQuantity = availableQuantity2;
+    	this.productPrice = price;
+    	offerId = offerId2;
+    	
+	}
+
+	public Integer getProductId() {
         return productId;
     }
 
@@ -62,4 +77,12 @@ public class CartProductResponse {
     public void setProductPrice(double productPrice) {
         this.productPrice = productPrice;
     }
+
+	public int getOfferId() {
+		return offerId;
+	}
+
+	public void setOfferId(int offerId) {
+		this.offerId = offerId;
+	}
 }
