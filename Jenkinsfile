@@ -9,6 +9,7 @@ pipeline {
 	 environment{
         DOCKER_USERNAME = credentials('NAVJOT_DOCKER_USERNAME')
         DOCKER_PASSWORD = credentials('NAVJOT_DOCKER_PASSWORD')
+	GIT_PAT = credentials('GIT_PAT')
     }
 	
     stages {
@@ -18,7 +19,7 @@ pipeline {
            stage('Checkout the code') {
             steps{
                 sh(script: """
-                    git clone https://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@github.com/saini-navjotk/dis-cart.git
+                    git clone https://evaluate("${GIT_PAT}")@github.com/saini-navjotk/dis-cart.git
                 """, returnStdout: true) 
             }
         }
