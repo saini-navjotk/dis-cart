@@ -41,10 +41,12 @@ public class CartController {
     public ResponseEntity<CartResponse> createCart(@Valid @RequestBody CartRequest cartRequest, @RequestHeader Map<String, String> headers) {
 
         loggingService.writeProcessLog("POST", "cart", "createCart", cartRequest);
+
         CartResponse cartResponse = cartDaoService.createCart(cartRequest);
         Utility.sendToKafka(cartResponse);
 
         return ResponseEntity.status(HttpStatus.CREATED).headers(Utility.getCustomResponseHeaders(headers)).body(cartResponse);
+    
     }
 
     @GetMapping(value = "/{userId}")
@@ -53,7 +55,6 @@ public class CartController {
         CartResponse cartResponse = cartDaoService.getCartByUserID(userId);
 
         loggingService.writeProcessLog("GET", "cart", "getCart", cartResponse);
-       // Utility.sendToKafka(cartResponse);
         return ResponseEntity.status(HttpStatus.OK).headers(Utility.getCustomResponseHeaders(headers)).body(cartResponse);
     }
 
@@ -64,6 +65,15 @@ public class CartController {
         CartUpdateResponse cartResponse = cartDaoService.updateCartById(cartUpdateRequest);
         Utility.sendToKafka(cartResponse);
         return ResponseEntity.status(HttpStatus.OK).headers(Utility.getCustomResponseHeaders(headers)).body(cartResponse);
+   
+    }
+    
+    @PutMapping(value = "/status")
+    public ResponseEntity<String> updateCartStatusById(@Valid @RequestBody CartUpdateRequest cartUpdateRequest, @RequestHeader Map<String, String> headers) {
+
+        loggingService.writeProcessLog("PUT", "cart", "updateCartStatusById", cartUpdateRequest);
+        
+        return ResponseEntity.status(HttpStatus.OK).headers(Utility.getCustomResponseHeaders(headers)).body(cartDaoService.updateCartStatusById(cartUpdateRequest));
     }
 
     @DeleteMapping(value = "/{id}")

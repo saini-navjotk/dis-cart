@@ -1,5 +1,19 @@
 package com.tcs.eas.rest.apis.db;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.client.RestTemplate;
+
+import com.tcs.eas.rest.apis.Constants;
 import com.tcs.eas.rest.apis.exception.CartExistsException;
 import com.tcs.eas.rest.apis.exception.CartNotFoundException;
 import com.tcs.eas.rest.apis.log.LoggingService;
@@ -23,18 +37,6 @@ import com.tcs.eas.rest.apis.model.ProductResponse;
 import com.tcs.eas.rest.apis.model.ShipmentProduct;
 import com.tcs.eas.rest.apis.model.User;
 import com.tcs.eas.rest.apis.model.UserInfo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.util.ObjectUtils;
-import org.springframework.web.client.RestTemplate;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class CartDaoService {
@@ -60,9 +62,6 @@ public class CartDaoService {
     @Autowired
     private CartProductRepository cartProductRepository;
 
-    @Value("${PRODUCT_API_BASE_URL}")
-    private String productApiBaseUrl;
-
 
     /**
      * Create Cart with Products
@@ -72,7 +71,7 @@ public class CartDaoService {
      */
     public CartResponse createCart(CartRequest cartRequest) {
 
-        Cart cartForUser = cartRepository.findCartsByUserId(cartRequest.getUserId());
+        Cart cartForUser = cartRepository.findCartsByUserIdAndStatus(cartRequest.getUserId(), Constants.STATUS_ACTIVE);
 
         if (cartForUser != null) {
             throw new CartExistsException("Cart ID " + cartForUser.getCartId() + " already exists for the User !");
@@ -81,7 +80,7 @@ public class CartDaoService {
         List<CartProductRequest> cartProducts = cartRequest.getCartProducts();
         Cart cart = new Cart();
         cart.setUserId(cartRequest.getUserId());
-        cart.setStatus("A");
+        cart.setStatus(Constants.STATUS_ACTIVE);
         cart.setCreatedTimestamp(new Date());
         cart.setCreatedBy(ADMIN_USER);
         cart.setUpdatedBy(API_USER);
@@ -111,7 +110,7 @@ public class CartDaoService {
                 cartResponse.setUserId(cartTemp.getUserId());
                 cartResponse.setDate(cartTemp.getCartDate());
                 cartResponse.setCartQuantity(cart.getCartProducts().size());
-
+                cartResponse.setStatus(cart.getStatus());
                 List<CartProductResponse> cartProductResponses = new ArrayList<>();
                 for (CartProduct cp : cart.getCartProducts()) {
                     ProductResponse productResponse = getProductInfoById(cp.getProductId());
@@ -123,7 +122,9 @@ public class CartDaoService {
                                     cp.getCartQuantity(),
                                     productResponse.getAvailableQuantity(),
                                     productResponse.getPrice(),
-                                    cp.getOfferId()
+                                    cp.getOfferId(),
+                                    productResponse.getBrand(),
+                                    productResponse.getImage()
                             ));
                 }
                 cartResponse.setCartProductResponses(cartProductResponses);
@@ -152,7 +153,7 @@ public class CartDaoService {
                     cartResponse.setUserId(cartTemp.getUserId());
                     cartResponse.setDate(cartTemp.getCartDate());
                     cartResponse.setCartQuantity(cartTemp.getCartProducts().size());
-
+                    cartResponse.setStatus(cartTemp.getStatus());
                     List<CartProductResponse> cartProductResponses = new ArrayList<>();
                     for (CartProduct cp : cartTemp.getCartProducts()) {
                         ProductResponse productResponse = getProductInfoById(cp.getProductId());
@@ -162,7 +163,10 @@ public class CartDaoService {
                                         productResponse.getProductName(),
                                         cp.getCartQuantity(),
                                         productResponse.getAvailableQuantity(),
-                                        productResponse.getPrice()
+                                        productResponse.getPrice(),
+                                        cp.getOfferId(),
+                                        productResponse.getBrand(),
+                                        productResponse.getImage()
                                 ));
                     }
                     cartResponse.setCartProductResponses(cartProductResponses);
@@ -185,7 +189,7 @@ public class CartDaoService {
      */
     public CartResponse getCartByUserID(int userId) {
 
-        Cart userCart = cartRepository.findCartsByUserId(userId);
+        Cart userCart = cartRepository.findCartsByUserIdAndStatus(userId, Constants.STATUS_ACTIVE);
 
         CartResponse cartResponse = new CartResponse();
         if (userCart != null) {
@@ -195,19 +199,23 @@ public class CartDaoService {
                     cartResponse.setUserId(cartTemp.getUserId());
                     cartResponse.setDate(cartTemp.getCartDate());
                     cartResponse.setCartQuantity(cartTemp.getCartProducts().size());
-
+                    cartResponse.setStatus(cartTemp.getStatus());
                     List<CartProductResponse> cartProductResponses = new ArrayList<>();
                     for (CartProduct cp : cartTemp.getCartProducts()) {
                         ProductResponse productResponse = getProductInfoById(cp.getProductId());
-                        cartProductResponses.add(
-                                new CartProductResponse(
-                                        productResponse.getProductId(),
-                                        productResponse.getProductName(),
-                                        cp.getCartQuantity(),
-                                        productResponse.getAvailableQuantity(),
-                                        productResponse.getPrice(),
-                                        cp.getOfferId()
-                                ));
+                        if(productResponse.getProductId() != 0) {
+	                        cartProductResponses.add(
+	                                new CartProductResponse(
+	                                        productResponse.getProductId(),
+	                                        productResponse.getProductName(),
+	                                        cp.getCartQuantity(),
+	                                        productResponse.getAvailableQuantity(),
+	                                        productResponse.getPrice(),
+	                                        cp.getOfferId(),
+	                                        productResponse.getBrand(),
+	                                        productResponse.getImage()
+	                                ));
+                        }
                     }
                     cartResponse.setCartProductResponses(cartProductResponses);
 
@@ -215,7 +223,13 @@ public class CartDaoService {
                 }).collect(Collectors.toList()).get(0);
             }
         } else {
-            throw new CartNotFoundException("No Cart found for User " + userId + " !");
+        	cartResponse.setUserId(userId);
+        	cartResponse.setCartId(0);
+            cartResponse.setDate("0000-00-00");
+            cartResponse.setCartQuantity(0);
+        	cartResponse.setStatus(Constants.STATUS_INACTIVE);
+        	cartResponse.setCartProductResponses(new ArrayList<CartProductResponse>());
+        	
         }
         return cartResponse;
 
@@ -281,7 +295,7 @@ public class CartDaoService {
                     cartUpdateResponse.setUserId(cartResult.getUserId());
                     cartUpdateResponse.setDate(cartResult.getCartDate());
                     cartUpdateResponse.setCartQuantity(cartProductsListFromDB.size());
-
+                    cartUpdateResponse.setStatus(cartResult.getStatus());
                     List<CartProductUpdateResponse> cartProductUpdateResponseList = new ArrayList<>();
 
                     for (CartProduct cartProduct : cartProductsToUpdateList) {
@@ -334,7 +348,7 @@ public class CartDaoService {
 
         try {
             ProductResponse response
-                    = restTemplate.getForObject(productApiBaseUrl + "/" + productId, ProductResponse.class);
+                    = restTemplate.getForObject(PRODUCT_API_BASE_URL + "/" + productId, ProductResponse.class);
             return response != null ? response : new ProductResponse();
         } catch (Exception e) {
             loggingService.logError(e.getMessage());
@@ -433,7 +447,7 @@ public class CartDaoService {
         List<ShipmentProduct> shipmentProductsList = new ArrayList<>();
         for (CartProduct cartProduct : cartProductList) {
             try {
-                String url = "http://localhost:8087/api/v1/dis/products/" + cartProduct.getProductId();
+                String url = PRODUCT_API_BASE_URL + "/" + cartProduct.getProductId();
                 Product productResponse = restTemplate.getForEntity(url, Product.class).getBody();
 
                 ShipmentProduct shipmentProduct = new ShipmentProduct();
@@ -491,5 +505,30 @@ public class CartDaoService {
         cartProductRepository.deleteById(cartProductId);
     }
 
+    
+    public String updateCartStatusById(CartUpdateRequest cartUpdateRequest) {
+    	
+    	String message = "Cart Status Updated Successfully !!!";
+    	String newStatus = cartUpdateRequest.getStatus();
+    	
+    	if(newStatus == null) {
+    		throw new CartExistsException("Cart Status is Missing, Cart Status Not Updated !!!");
+    	} else if (!Constants.STATUS_ACTIVE.equals(newStatus) && !Constants.STATUS_INACTIVE.equals(newStatus)) {
+    		throw new CartExistsException("Invalid Cart Status, Cart Status Not Updated !!!");
+    		
+    	}
+    	
+    	Optional<Cart> cartInfoFromDB = cartRepository.findById(cartUpdateRequest.getCartId());
+    	 if (cartInfoFromDB.isPresent()) {
+    		 Cart dBCart = cartInfoFromDB.get();
+    		 dBCart.setStatus(newStatus);
+    		 cartRepository.save(dBCart);
+    	 } else {
+    		 throw new CartNotFoundException("Cart for ID " + cartUpdateRequest.getCartId() + " not found !");
+    	 }
+       
+        return message;
+    }
+    
 }
 

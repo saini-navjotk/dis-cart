@@ -6,7 +6,7 @@ import lombok.Data;
 
 @ApiModel
 @Data
-@AllArgsConstructor
+//@AllArgsConstructor
 public class CartProductResponse {
 
     private Integer productId;
@@ -15,27 +15,31 @@ public class CartProductResponse {
     private int availableQuantity;
     private double productPrice;
     private int offerId;
+    private String brand;
+    private byte[] image;
 
     public CartProductResponse() {
     }
 
-    public CartProductResponse(Integer productId, String productName, int productQuantity, int availableQuantity, double productPrice) {
-        this.productId = productId;
-        this.productName = productName;
-        this.productQuantity = productQuantity;
-        this.availableQuantity = availableQuantity;
-        this.productPrice = productPrice;
-    }
-
-    public CartProductResponse(int productId2, String productName2, int cartQuantity, int availableQuantity2,
-			Double price, int offerId2) {
-    	productId = productId2;
-    	productName = productName2;
-    	this.productQuantity = cartQuantity;
-    	availableQuantity = availableQuantity2;
-    	this.productPrice = price;
-    	offerId = offerId2;
-    	
+    /**
+	 * @param productId
+	 * @param productName
+	 * @param productQuantity
+	 * @param availableQuantity
+	 * @param productPrice
+	 * @param offerId
+	 */
+	public CartProductResponse(Integer productId, String productName, int productQuantity, int availableQuantity,
+			double productPrice, int offerId, String brand, byte[] image) {
+		super();
+		this.productId = productId;
+		this.productName = productName;
+		this.productQuantity = productQuantity;
+		this.availableQuantity = availableQuantity;
+		this.productPrice = productPrice;
+		this.offerId = offerId;
+		this.brand = brand;
+		this.image = image;
 	}
 
 	public Integer getProductId() {
@@ -85,4 +89,23 @@ public class CartProductResponse {
 	public void setOfferId(int offerId) {
 		this.offerId = offerId;
 	}
+
+	public String getBrand() {
+		return brand;
+	}
+
+	public void setBrand(String brand) {
+		this.brand = brand;
+	}
+
+	public byte[] getImage() {
+		return image;
+	}
+
+	public void setImage(byte[] image) {
+		this.image = image;
+	}
+    
+	
+    
 }

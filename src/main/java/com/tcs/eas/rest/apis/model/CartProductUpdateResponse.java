@@ -52,4 +52,6 @@ public class CartProductUpdateResponse {
 	public void setProductPrice(double productPrice) {
 		this.productPrice = productPrice;
 	}
+    
+    
 }

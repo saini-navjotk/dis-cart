@@ -12,7 +12,7 @@ public class ProductResponse {
     private String productDescription;
     private String brand;
     private String productCategory;
-    private String image;
+    private byte[] image;
     private int availableQuantity;
     private int minimumQuantity;
     private String currency;
@@ -53,10 +53,10 @@ public class ProductResponse {
 	public void setProductCategory(String productCategory) {
 		this.productCategory = productCategory;
 	}
-	public String getImage() {
+	public byte[] getImage() {
 		return image;
 	}
-	public void setImage(String image) {
+	public void setImage(byte[] image) {
 		this.image = image;
 	}
 	public int getAvailableQuantity() {
@@ -119,4 +119,7 @@ public class ProductResponse {
 	public void setMfgDate(String mfgDate) {
 		this.mfgDate = mfgDate;
 	}
+    
+    
+    
 }

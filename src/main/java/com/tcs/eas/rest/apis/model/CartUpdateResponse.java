@@ -17,6 +17,10 @@ public class CartUpdateResponse {
     private String date;
     private int cartQuantity;
     private List<CartProductUpdateResponse> cartProductUpdateResponseList;
+    private byte[] image;
+    private String brand;
+    private String status;
+    
 	public int getCartId() {
 		return cartId;
 	}
@@ -47,4 +51,24 @@ public class CartUpdateResponse {
 	public void setCartProductUpdateResponseList(List<CartProductUpdateResponse> cartProductUpdateResponseList) {
 		this.cartProductUpdateResponseList = cartProductUpdateResponseList;
 	}
+	public String getStatus() {
+		return status;
+	}
+	public void setStatus(String status) {
+		this.status = status;
+	}
+	public byte[] getImage() {
+		return image;
+	}
+	public void setImage(byte[] image) {
+		this.image = image;
+	}
+	public String getBrand() {
+		return brand;
+	}
+	public void setBrand(String brand) {
+		this.brand = brand;
+	}
+    
+    
 }

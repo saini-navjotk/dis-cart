@@ -17,6 +17,8 @@ public class CartUpdateRequest {
     private List<CartProductRequest> cartProducts;
 
     private String date;
+    
+    private String status;
 
     public int getCartId() {
         return cartId;
@@ -49,5 +51,15 @@ public class CartUpdateRequest {
     public void setCartProducts(List<CartProductRequest> cartProducts) {
         this.cartProducts = cartProducts;
     }
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+    
+    
 
 }

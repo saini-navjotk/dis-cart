@@ -141,4 +141,7 @@ public interface Constants {
 	 * 
 	 */
 	public static final String NO_TRANSATION_ID = "NOT SET TRANSATION-ID";
+	
+	public static final String STATUS_ACTIVE = "A";
+	public static final String STATUS_INACTIVE = "I";
 }
