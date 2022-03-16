@@ -9,6 +9,7 @@ pipeline {
 	 environment{
         DOCKER_USERNAME = credentials('NAVJOT_DOCKER_USERNAME')
         DOCKER_PASSWORD = credentials('NAVJOT_DOCKER_PASSWORD')
+	GIT_PAT = credentials('GIT_PAT')
     }
 	
     stages {
