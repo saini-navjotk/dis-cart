@@ -41,8 +41,8 @@ public class CartController {
     public ResponseEntity<CartResponse> createCart(@Valid @RequestBody CartRequest cartRequest, @RequestHeader Map<String, String> headers) {
 
         loggingService.writeProcessLog("POST", "cart", "createCart", cartRequest);
-
-        CartResponse cartResponse = cartDaoService.createCart(cartRequest);
+        String auth_header= headers.get("authorization");
+        CartResponse cartResponse = cartDaoService.createCart(cartRequest, auth_header);
         Utility.sendToKafka(cartResponse);
 
         return ResponseEntity.status(HttpStatus.CREATED).headers(Utility.getCustomResponseHeaders(headers)).body(cartResponse);
@@ -51,8 +51,8 @@ public class CartController {
 
     @GetMapping(value = "/{userId}")
     public ResponseEntity<CartResponse> getCartByUserId(@PathVariable int userId, @RequestHeader Map<String, String> headers) {
-
-        CartResponse cartResponse = cartDaoService.getCartByUserID(userId);
+    	String auth_header= headers.get("authorization");
+        CartResponse cartResponse = cartDaoService.getCartByUserID(userId, auth_header);
 
         loggingService.writeProcessLog("GET", "cart", "getCart", cartResponse);
         return ResponseEntity.status(HttpStatus.OK).headers(Utility.getCustomResponseHeaders(headers)).body(cartResponse);
@@ -62,7 +62,8 @@ public class CartController {
     public ResponseEntity<CartUpdateResponse> updateCartById(@Valid @RequestBody CartUpdateRequest cartUpdateRequest, @RequestHeader Map<String, String> headers) {
 
         loggingService.writeProcessLog("PUT", "cart", "updateCartById", cartUpdateRequest);
-        CartUpdateResponse cartResponse = cartDaoService.updateCartById(cartUpdateRequest);
+        String auth_header= headers.get("authorization");
+        CartUpdateResponse cartResponse = cartDaoService.updateCartById(cartUpdateRequest, auth_header);
         Utility.sendToKafka(cartResponse);
         return ResponseEntity.status(HttpStatus.OK).headers(Utility.getCustomResponseHeaders(headers)).body(cartResponse);
    

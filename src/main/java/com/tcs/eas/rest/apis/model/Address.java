@@ -25,7 +25,7 @@ public class Address implements Serializable {
 
     private int addressid;
 
-    private User user;
+    //private User user;
 
     private String addressline1;
 
@@ -133,13 +133,11 @@ public class Address implements Serializable {
     }
 
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
+	/*
+	 * public User getUser() { return user; }
+	 * 
+	 * public void setUser(User user) { this.user = user; }
+	 */
 
     public String getAddressline1() {
         return addressline1;

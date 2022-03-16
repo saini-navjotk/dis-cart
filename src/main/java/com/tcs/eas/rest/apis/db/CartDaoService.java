@@ -9,6 +9,9 @@ import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.client.RestTemplate;
@@ -69,7 +72,7 @@ public class CartDaoService {
      * @param cartRequest request with products to add in cart
      * @return cartResponse Cart Response for UI
      */
-    public CartResponse createCart(CartRequest cartRequest) {
+    public CartResponse createCart(CartRequest cartRequest,String auth_header) {
 
         Cart cartForUser = cartRepository.findCartsByUserIdAndStatus(cartRequest.getUserId(), Constants.STATUS_ACTIVE);
 
@@ -113,7 +116,7 @@ public class CartDaoService {
                 cartResponse.setStatus(cart.getStatus());
                 List<CartProductResponse> cartProductResponses = new ArrayList<>();
                 for (CartProduct cp : cart.getCartProducts()) {
-                    ProductResponse productResponse = getProductInfoById(cp.getProductId());
+                    ProductResponse productResponse = getProductInfoById(cp.getProductId() , auth_header);
 
                     cartProductResponses.add(
                             new CartProductResponse(
@@ -142,7 +145,7 @@ public class CartDaoService {
      * @param id unique ID of Cart
      * @return cartResponse Cart Response for UI
      */
-    public CartResponse getCartById(int id) {
+    public CartResponse getCartById(int id, String auth_header) {
         Optional<Cart> cartFetched = cartRepository.findById(id);
         CartResponse cartResponse = new CartResponse();
         if (cartFetched.isPresent()) {
@@ -156,7 +159,7 @@ public class CartDaoService {
                     cartResponse.setStatus(cartTemp.getStatus());
                     List<CartProductResponse> cartProductResponses = new ArrayList<>();
                     for (CartProduct cp : cartTemp.getCartProducts()) {
-                        ProductResponse productResponse = getProductInfoById(cp.getProductId());
+                        ProductResponse productResponse = getProductInfoById(cp.getProductId(), auth_header);
                         cartProductResponses.add(
                                 new CartProductResponse(
                                         productResponse.getProductId(),
@@ -187,7 +190,7 @@ public class CartDaoService {
      * @param userId unique ID of user
      * @return cart reponse
      */
-    public CartResponse getCartByUserID(int userId) {
+    public CartResponse getCartByUserID(int userId,String auth_header) {
 
         Cart userCart = cartRepository.findCartsByUserIdAndStatus(userId, Constants.STATUS_ACTIVE);
 
@@ -202,7 +205,7 @@ public class CartDaoService {
                     cartResponse.setStatus(cartTemp.getStatus());
                     List<CartProductResponse> cartProductResponses = new ArrayList<>();
                     for (CartProduct cp : cartTemp.getCartProducts()) {
-                        ProductResponse productResponse = getProductInfoById(cp.getProductId());
+                        ProductResponse productResponse = getProductInfoById(cp.getProductId(), auth_header);
                         if(productResponse.getProductId() != 0) {
 	                        cartProductResponses.add(
 	                                new CartProductResponse(
@@ -240,7 +243,7 @@ public class CartDaoService {
      *
      * @param cartUpdateRequest request body for update
      */
-    public CartUpdateResponse updateCartById(CartUpdateRequest cartUpdateRequest) {
+    public CartUpdateResponse updateCartById(CartUpdateRequest cartUpdateRequest, String auth_header) {
         if (cartUpdateRequest.getCartProducts().size() == 0) {
             cartRepository.deleteById(cartUpdateRequest.getCartId());
         } else {
@@ -304,7 +307,7 @@ public class CartDaoService {
                         cartProductUpdateResponse.setOfferId(cartProduct.getOfferId());
                         cartProductUpdateResponse.setProductQuantity(cartProduct.getCartQuantity());
 
-                        ProductResponse productResponse = getProductInfoById(cartProduct.getProductId());
+                        ProductResponse productResponse = getProductInfoById(cartProduct.getProductId(), auth_header);
                         if (!ObjectUtils.isEmpty(productResponse)) {
                             cartProductUpdateResponse.setProductPrice(productResponse.getPrice());
                             cartProductUpdateResponse.setProductName(productResponse.getProductName());
@@ -342,14 +345,16 @@ public class CartDaoService {
      * @param productId unique ID of product
      * @return cartProductResponse cart product response for UI
      */
-    private ProductResponse getProductInfoById(int productId) {
-
-        RestTemplate restTemplate = new RestTemplate();
-
+    private ProductResponse getProductInfoById(int productId, String auth_header) {
+    	HttpHeaders headers = new HttpHeaders();
+		headers.add("Authorization", auth_header);
+		HttpEntity<String> request = new HttpEntity<String>(headers);
+		RestTemplate restTemplate = new RestTemplate();
+       
         try {
-            ProductResponse response
-                    = restTemplate.getForObject(PRODUCT_API_BASE_URL + "/" + productId, ProductResponse.class);
-            return response != null ? response : new ProductResponse();
+        	ResponseEntity<ProductResponse> response
+                    = restTemplate.exchange(PRODUCT_API_BASE_URL + "/" + productId,org.springframework.http.HttpMethod.GET, request, ProductResponse.class);
+            return response != null ? response.getBody() : new ProductResponse();
         } catch (Exception e) {
             loggingService.logError(e.getMessage());
             return new ProductResponse();

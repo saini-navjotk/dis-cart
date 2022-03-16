@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dis-cart
-  namespace: orders-domain
+  namespace: order-domain
   labels:
     app: dis-cart
 spec:
